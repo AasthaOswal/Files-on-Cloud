@@ -5,16 +5,15 @@ const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
 const cors = require('cors');
+require("dotenv").config();
 
 const app = express();
 app.use(cors());
 const PORT = process.env.PORT || 10000;
 
 // Connect to MongoDB
-mongoose.connect("mongodb+srv://priyanshkr138_db_user:xAGAIIZyknDkDCIu@cluster0.nn2zrb2.mongodb.net/?appName=Cluster0", {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-})
+const MONGO_URI = process.env.MONGO_URI;
+mongoose.connect(MONGO_URI)
 .then(() => console.log("✅ Connected to MongoDB Atlas"))
 .catch(err => console.error("❌ MongoDB connection error:", err));
 
