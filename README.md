@@ -109,23 +109,26 @@ GET /api/files/:fileId
 ---
 ## 📁 Project Structure
 
+```bash
 File-on-Cloud/
 │
 ├── backend/
-│ ├── middleware/ # JWT auth, error handling
-│ ├── models/ # Database schemas
-│ ├── routes/ # REST API endpoints
-│ ├── config/ # DB & app configuration (optional)
-│ └── server.js # Express server setup
+│   ├── middleware/        # JWT auth, error handling
+│   ├── models/            # Database schemas
+│   ├── routes/            # REST API endpoints
+│   ├── config/            # DB & app configuration (optional)
+│   └── server.js          # Express server setup
 │
-├── public/ # Frontend static files
-├── uploads/ # File storage (local)
+├── public/                # Frontend static files
+├── uploads/               # File storage (local)
 │
-├── .env.example # Sample env file (recommended)
+├── .env.example           # Sample environment variables
 ├── .gitignore
 ├── LICENSE
 ├── package.json
-├── README.md
+├── package-lock.json
+└── README.md
+```
 
 ## 👩‍💻 Maintainers
 
