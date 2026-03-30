@@ -132,7 +132,7 @@ File-on-Cloud/
 Screenshots
 <img width="1881" height="1025" alt="image" src="https://github.com/user-attachments/assets/f7c12ebd-1a51-4168-83ac-27ee9786e8e9" />
 <img width="1716" height="1061" alt="image" src="https://github.com/user-attachments/assets/8dd03d14-bad4-4604-ace9-691c00d61237" />
-<img width="1180" height="917" alt="image" src="https://github.com/user-attachments/assets/436d2fc7-2046-4ecd-8a44-38f991436240" />
+<img width="1147" height="827" alt="image" src="https://github.com/user-attachments/assets/263943d2-292a-49e0-979e-52cfcdcea203" />
 <img width="1192" height="785" alt="image" src="https://github.com/user-attachments/assets/891d12cd-9722-475c-a658-e1719f9a1932" />
 <img width="1151" height="593" alt="image" src="https://github.com/user-attachments/assets/0e791d16-4b8d-45d1-b9fa-0890897c349d" />
 
