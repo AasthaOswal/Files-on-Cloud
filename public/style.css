@@ -530,7 +530,7 @@ button:disabled {
         flex-direction: column;
         align-items: center;
     }
-
+}
 
 .message {
     padding: 1rem;
@@ -1001,3 +1001,53 @@ body.modal-open {
     border: 1px solid rgba(255, 255, 255, 0.1);
     font-size: 0.9rem;
 }
+<<<<<<< feat-password-toggle
+
+
+.password-container{
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.password-container input{
+  width: 100%;
+  padding-right: 44px;
+  box-sizing: border-box;
+}
+
+#togglePassword{
+  position: absolute;
+  right: 12px;
+  top: 35%;
+  transform: translateY(-50%);
+
+  background: none;
+  border: none;
+  cursor: pointer;
+
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+
+  font-size: 18px;
+  line-height: 1;
+  padding: 0;
+  margin: 0;
+
+  color: #a0aec0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+#togglePassword:hover{
+  color: #fff;
+}
+
+#togglePassword:active{
+  transform: translateY(-50%) !important;
+  box-shadow: none !important;
+}
+=======
+>>>>>>> main
