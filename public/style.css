@@ -390,13 +390,108 @@ button { font: inherit; cursor: pointer; }
 /* ---------- The Bottom Footer Area ---------- */
 .footer {
   border-top: 1px solid var(--border);
-  max-width: 1120px; margin: 0 auto;
-  padding: 24px;
-  display: flex; flex-direction: column; gap: 12px;
-  align-items: center; justify-content: space-between;
-  font-size: 13px; color: var(--muted);
+  padding: 40px 24px;
+  background: transparent;
+  width: 100%;
 }
-@media (min-width: 600px) { .footer { flex-direction: row; } }
+
+.footer-container {
+  max-width: 680px; /* Centered layout matching the content container for excellent visual balance */
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  text-align: center;
+}
+
+.footer-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.footer-section h3 {
+  margin: 0;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.social-links {
+  display: flex;
+  gap: 16px;
+  margin-top: 4px;
+}
+
+.social-links a {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 500;
+  transition: color 0.2s, transform 0.2s;
+}
+
+.social-links a:hover {
+  color: var(--text);
+  transform: translateY(-1px);
+}
+
+.social-links a img {
+  height: 18px;
+  width: 18px;
+}
+
+.social-links a img[alt="linkedin"] {
+  border-radius: 4px;
+}
+
+.social-links a img[alt="github"] {
+  background: white;
+  border-radius: 50%;
+}
+
+.brand-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.brand-text {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+
+.copyright {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+@media (min-width: 600px) {
+  .footer-container {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    gap: 32px;
+  }
+
+  .footer-section {
+    align-items: flex-start;
+    text-align: left;
+  }
+
+  .footer-section.brand-info {
+    align-items: flex-end;
+    text-align: right;
+  }
+}
 
 /* ---------- Little Floating Toast Notifications ---------- */
 .toast {

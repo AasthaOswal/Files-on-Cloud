@@ -81,25 +81,27 @@
 
   <!-- The Bottom Footer -->
   <footer class="footer">
-    <div class="brand" style="display: flex; flex-direction: column; gap: 8px;">
-      <h3 style="margin: 0; color: var(--text); font-size: 16px;">💻 Contact Developer</h3>
-      <div style="display: flex; gap: 16px; margin-top: 8px;">
-        <a href="https://www.linkedin.com/in/priyanshu-kumar-15799a293/" target="_blank" rel="noopener noreferrer" style="display: flex; align-items: center; gap: 6px;">
-          <img src="linkedin.png" height="20" width="20" alt="linkedin" style="border-radius: 4px;"> LinkedIn
-        </a>
-        <a href="https://github.com/priyansh13-c" target="_blank" rel="noopener noreferrer" style="display: flex; align-items: center; gap: 6px;">
-          <img src="github.png" height="20" width="20" alt="github" style="background: white; border-radius: 50%;"> GitHub
-        </a>
+    <div class="footer-container">
+      <div class="footer-section contact-dev">
+        <h3>💻 Contact Developer</h3>
+        <div class="social-links">
+          <a href="https://www.linkedin.com/in/priyanshu-kumar-15799a293/" target="_blank" rel="noopener noreferrer">
+            <img src="linkedin.png" alt="linkedin"> LinkedIn
+          </a>
+          <a href="https://github.com/priyansh13-c" target="_blank" rel="noopener noreferrer">
+            <img src="github.png" alt="github"> GitHub
+          </a>
+        </div>
       </div>
-    </div>
-    <div style="text-align: right;">
-      <div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-bottom: 8px;">
-        <span class="brand-mark sm">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19a4.5 4.5 0 1 0-1.4-8.78A6 6 0 0 0 4 12.5 4.5 4.5 0 0 0 6.5 19"/></svg>
-        </span>
-        <span style="font-weight: 500;">Files on Cloud</span>
+      <div class="footer-section brand-info">
+        <div class="brand-logo">
+          <span class="brand-mark sm">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19a4.5 4.5 0 1 0-1.4-8.78A6 6 0 0 0 4 12.5 4.5 4.5 0 0 0 6.5 19"/></svg>
+          </span>
+          <span class="brand-text">Files on Cloud</span>
+        </div>
+        <p class="copyright">&copy; <span id="year"></span> Files on Cloud. Made with ❤️</p>
       </div>
-      <p class="muted" style="margin: 0;">&copy; <span id="year"></span> Files on Cloud. Made with ❤️</p>
     </div>
   </footer>
 
