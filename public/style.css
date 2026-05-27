@@ -505,6 +505,40 @@ button { font: inherit; cursor: pointer; }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(4px); }
 
 /* ---------- Dashboard & Auth specific styles ---------- */
+/* Full-height layout and vertical centering for Authentication screens */
+body.auth-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+body.auth-page .nav {
+  flex-shrink: 0;
+  width: 100%;
+}
+
+body.auth-page .auth-workspace {
+  flex-grow: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+}
+
+body.auth-page .auth-card {
+  width: 100%;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+body.auth-page .footer {
+  margin-top: auto;
+  flex-shrink: 0;
+}
+
 .header {
   text-align: center;
   padding: 40px 24px 20px;
