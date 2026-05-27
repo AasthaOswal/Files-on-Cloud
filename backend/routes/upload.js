@@ -1,5 +1,6 @@
 const express = require('express');
 const multer = require('multer');
+const jwt = require('jsonwebtoken');
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
@@ -83,6 +84,15 @@ const parseExpiration = (expiration) => {
 // Upload file route
 router.post('/upload', upload.single('file'), async (req, res) => {
   try {
+    const authHeader = req.header('Authorization');
+    if (authHeader) {
+      try {
+        const token = authHeader.replace('Bearer ', '');
+        req.user = jwt.verify(token, process.env.JWT_SECRET);
+      } catch (err) {
+        console.log("Token invalid, proceeding as anonymous upload.");
+      }
+    }
     if (!req.file) {
       return res.status(400).json({ error: 'No file uploaded.' });
     }
@@ -139,7 +149,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
       size: req.file.size,
       password: password || undefined, // Only set if provided
       expiresAt,
-      uploadedBy: req.user ? req.user._id : null
+      uploadedBy: req.user ? (req.user._id || req.user.userId) : null
     });
 
     await newFileRecord.save();
@@ -237,13 +247,59 @@ router.get('/analytics/:code', auth, async (req, res) => {
 // Get all files uploaded by current user
 router.get('/files/me', auth, async (req, res) => {
   try {
-    const files = await FileRecord.find({ uploadedBy: req.user._id })
+    const files = await FileRecord.find({ uploadedBy: req.user._id || req.user.userId })
       .select('-__v -password') // exclude password hash and version
       .sort({ uploadDate: -1 });
     res.json({ files });
   } catch (error) {
     console.error('Get user files error:', error);
     res.status(500).json({ error: 'Failed to retrieve files.' });
+  }
+});
+
+// Bulk Delete API Endpoint
+router.delete('/files/bulk', auth, async (req, res) => {
+  try {
+    const { fileCodes } = req.body;
+
+    if (!fileCodes || !Array.isArray(fileCodes) || fileCodes.length === 0) {
+      return res.status(400).json({ error: 'No valid files selected for deletion.' });
+    }
+
+    const filesToDelete = await FileRecord.find({
+      code: { $in: fileCodes },
+      uploadedBy: req.user._id || req.user.userId 
+    });
+
+    if (filesToDelete.length === 0) {
+      return res.status(404).json({ error: 'No matching files found or you do not have permission.' });
+    }
+
+    let deletedCount = 0;
+    for (const file of filesToDelete) {
+      const filePath = path.join(__dirname, '..', '..', 'uploads', file.filename);
+      try {
+        await fs.promises.access(filePath);
+        await fs.promises.unlink(filePath);
+        deletedCount++;
+      } catch (fsError) {
+        console.error(`Failed to delete file ${file.filename} from disk:`, fsError);
+      }
+    }
+
+    const dbResult = await FileRecord.deleteMany({
+      code: { $in: fileCodes },
+      uploadedBy: req.user._id || req.user.userId
+    });
+
+    res.json({ 
+      message: `Successfully deleted ${dbResult.deletedCount} files.`,
+      deletedCount: dbResult.deletedCount
+    });
+
+  } catch (error) {
+    console.error('Bulk delete error:', error);
+    res.status(500).json({ error: 'Internal server error during bulk deletion.' });
   }
 });
 

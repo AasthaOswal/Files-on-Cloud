@@ -51,6 +51,9 @@
                 <table class="dashboard-table" id="filesTable">
                     <thead>
                         <tr>
+                            <th style="width: 40px; text-align: center;">
+                                <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll()">
+                            </th>
                             <th>File Name</th>
                             <th>Code</th>
                             <th>Size</th>
@@ -69,6 +72,16 @@
                 <div class="spinner"></div>
                 <p>Loading your files...</p>
             </div>
+        </div>
+    </div>
+
+    <div id="batchActionBar" class="batch-action-bar">
+        <div class="batch-info">
+            <span id="selectedCount">0</span> file(s) selected
+        </div>
+        <div class="batch-buttons">
+            <button onclick="bulkDownload()" class="batch-btn">⬇️ Download All</button>
+            <button onclick="bulkDelete()" class="batch-btn delete">🗑️ Delete All</button>
         </div>
     </div>
 
@@ -97,7 +110,9 @@
     </div>
 
     <script>
-        const API_BASE = "";
+        const API_BASE = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost' 
+            ? 'http://localhost:5000' 
+            : 'https://your-backend-url.onrender.com'; // TODO: Replace this with your actual deployed backend URL
         const authToken = localStorage.getItem('authToken');
 
         // Make sure the user is actually logged in before showing the dashboard
@@ -114,6 +129,7 @@
 
         const TOTAL_QUOTA = 1024 * 1024 * 1024; 
         let globalFilesList = []; 
+        let selectedFiles = new Set(); 
 
         homeBtn.addEventListener('click', () => window.location.href = 'index.html');
         logoutBtn.addEventListener('click', () => {
@@ -124,6 +140,7 @@
         document.addEventListener('DOMContentLoaded', fetchMyFiles);
 
         async function fetchMyFiles() {
+            console.log("Sending Token:", authToken);
             try {
                 const response = await fetch(`${API_BASE}/api/files/me`, {
                     headers: { 'Authorization': `Bearer ${authToken}` }
@@ -211,10 +228,13 @@
         function renderFiles(files) {
             updateStorageVisualizer(files);
 
+            const masterCheck = document.getElementById('selectAllCheckbox');
+            if(masterCheck) masterCheck.checked = false;
+
             if (!files || files.length === 0) {
                 filesTableBody.innerHTML = `
                     <tr>
-                        <td colspan="7" class="empty-state">
+                        <td colspan="8" class="empty-state">
                             No files found.<br><br>
                             <button onclick="window.location.href='index.html'" class="auth-btn" style="background:#667eea;color:white;border:none;margin-top:1rem;">Upload a File</button>
                         </td>
@@ -223,26 +243,139 @@
                 return;
             }
 
-            filesTableBody.innerHTML = files.map(file => {
-                const displayName = file.displayName || file.originalName;
-                const escapedName = displayName.replace(/'/g, "\\'");
-                return `
-                    <tr>
-                        <td><strong>${displayName}</strong></td>
-                        <td><span style="font-family:monospace; background:rgba(255,255,255,0.1); padding:0.2rem 0.5rem; border-radius:4px;">${file.code}</span></td>
-                        <td>${formatBytes(file.size)}</td>
-                        <td>${new Date(file.uploadDate).toLocaleDateString()}</td>
-                        <td>${new Date(file.expiresAt).toLocaleDateString()}</td>
-                        <td>${file.downloadCount}</td>
-                        <td style="min-width: 250px;">
-                            <button class="dashboard-action-btn" onclick="copyLink('${file.code}')">Copy Link</button>
-                            <button class="dashboard-action-btn" onclick="openAnalytics('${file.code}')">Analytics</button>
-                            <button class="dashboard-action-btn" onclick="renameFile('${file.code}', '${escapedName}')">Rename</button>
-                            <button class="dashboard-action-btn delete" onclick="deleteFile('${file.code}')">Delete</button>
-                        </td>
-                    </tr>
-                `;
-            }).join('');
+            filesTableBody.innerHTML = files.map(file => `
+                <tr class="${selectedFiles.has(file.code) ? 'row-selected' : ''}">
+                    <td style="text-align: center;">
+                        <input type="checkbox" class="row-checkbox" value="${file.code}" 
+                               ${selectedFiles.has(file.code) ? 'checked' : ''} 
+                               onchange="handleRowCheck(this)">
+                    </td>
+                    <td><strong>${file.originalName}</strong></td>
+                    <td><span style="font-family:monospace; background:rgba(255,255,255,0.1); padding:0.2rem 0.5rem; border-radius:4px;">${file.code}</span></td>
+                    <td>${formatBytes(file.size)}</td>
+                    <td>${new Date(file.uploadDate).toLocaleDateString()}</td>
+                    <td>${new Date(file.expiresAt).toLocaleDateString()}</td>
+                    <td>${file.downloadCount}</td>
+                    <td style="min-width: 250px;">
+                        <button class="dashboard-action-btn" onclick="copyLink('${file.code}')">Copy Link</button>
+                        <button class="dashboard-action-btn" onclick="openAnalytics('${file.code}')">Analytics</button>
+                        <button class="dashboard-action-btn delete" onclick="deleteFile('${file.code}')">Delete</button>
+                    </td>
+                </tr>
+            `).join('');
+
+            updateBatchUI();
+        }
+
+        function handleRowCheck(checkbox) {
+            if (checkbox.checked) {
+                selectedFiles.add(checkbox.value);
+                checkbox.closest('tr').classList.add('row-selected');
+            } else {
+                selectedFiles.delete(checkbox.value);
+                checkbox.closest('tr').classList.remove('row-selected');
+            }
+            updateBatchUI();
+        }
+
+        function toggleSelectAll() {
+            const masterCheck = document.getElementById('selectAllCheckbox');
+            const rowCheckboxes = document.querySelectorAll('.row-checkbox');
+            
+            if (masterCheck.checked) {
+                rowCheckboxes.forEach(cb => {
+                    cb.checked = true;
+                    selectedFiles.add(cb.value);
+                    cb.closest('tr').classList.add('row-selected');
+                });
+            } else {
+                rowCheckboxes.forEach(cb => {
+                    cb.checked = false;
+                    selectedFiles.delete(cb.value);
+                    cb.closest('tr').classList.remove('row-selected');
+                });
+            }
+            updateBatchUI();
+        }
+
+        function updateBatchUI() {
+            const batchBar = document.getElementById('batchActionBar');
+            const countSpan = document.getElementById('selectedCount');
+            const masterCheck = document.getElementById('selectAllCheckbox');
+            const rowCheckboxes = document.querySelectorAll('.row-checkbox');
+            
+            countSpan.textContent = selectedFiles.size;
+            
+            if (rowCheckboxes.length > 0) {
+                const allChecked = Array.from(rowCheckboxes).every(cb => cb.checked);
+                const someChecked = Array.from(rowCheckboxes).some(cb => cb.checked);
+                masterCheck.checked = allChecked;
+                masterCheck.indeterminate = someChecked && !allChecked;
+            }
+
+            if (selectedFiles.size > 0) {
+                batchBar.classList.add('show');
+            } else {
+                batchBar.classList.remove('show');
+            }
+        }
+
+        // --- UPDATED: Bulk Download (Sequential) ---
+        function bulkDownload() {
+            if (selectedFiles.size === 0) return;
+            
+            showMessage(dashboardMessage, `⏳ Starting download for ${selectedFiles.size} files... Please allow popups if asked.`, 'success');
+            
+            let delay = 0;
+            selectedFiles.forEach(code => {
+                setTimeout(() => {
+                    const link = document.createElement('a');
+                    link.href = `${API_BASE}/api/download/${code}`;
+                    link.setAttribute('download', '');
+                    link.target = '_blank';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                }, delay);
+                delay += 800; // 800ms gap between downloads to prevent browser blocking
+            });
+        }
+
+        // --- UPDATED: Bulk Delete (Async API Call) ---
+        async function bulkDelete() {
+            if (selectedFiles.size === 0) return;
+            if (!confirm(`Are you sure you want to completely delete ${selectedFiles.size} selected file(s)?`)) return;
+
+            const deleteBtn = document.querySelector('.batch-btn.delete');
+            deleteBtn.innerHTML = '⏳ Deleting...';
+            deleteBtn.disabled = true;
+
+            try {
+                const response = await fetch(`${API_BASE}/api/files/bulk`, {
+                    method: 'DELETE',
+                    headers: { 
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ fileCodes: Array.from(selectedFiles) })
+                });
+
+                if (response.ok) {
+                    showMessage(dashboardMessage, `✅ Successfully deleted ${selectedFiles.size} files.`, 'success');
+                    selectedFiles.clear(); 
+                    document.getElementById('batchActionBar').classList.remove('show');
+                    fetchMyFiles(); 
+                } else {
+                    const result = await response.json();
+                    showMessage(dashboardMessage, `❌ ${result.error || 'Failed to delete files.'}`, 'error');
+                }
+            } catch (error) {
+                console.error('Bulk Delete Error:', error);
+                showMessage(dashboardMessage, '❌ Network error during bulk delete.', 'error');
+            } finally {
+                deleteBtn.innerHTML = '🗑️ Delete All';
+                deleteBtn.disabled = false;
+            }
         }
 
         function copyLink(code) {
@@ -300,6 +433,7 @@
                 if (response.ok) {
                     showMessage(dashboardMessage, '✅ File deleted successfully.', 'success');
                     dashboardLoading.style.display = 'block';
+                    selectedFiles.delete(code); // Clean up selection
                     filesTableBody.innerHTML = '';
                     fetchMyFiles();
                 } else {
@@ -365,6 +499,7 @@
                 element.timeoutId = null;
             }, 5000);
         }
+
 
     </script>
 </body>

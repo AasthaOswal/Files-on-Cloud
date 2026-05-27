@@ -24,8 +24,28 @@ if (!process.env.MONGO_URI) {
 const app = express();
 const PORT = process.env.PORT || 10002;
 
-// CORS
-app.use(cors());
+// --- SECURE CORS SETUP ---
+const allowedOrigins = [
+  'http://localhost:5500', 
+  'http://127.0.0.1:5500', 
+  'https://your-frontend-vercel-url.vercel.app' // TODO: Replace this with your actual deployed backend URL
+];
+
+app.use(cors({
+  origin: function (origin, callback) {
+    //To allow mobile apps or curl requests 
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true
+}));
+// -------------------------
+
 // Import routes
 const authRoutes = require('./routes/auth');
 const uploadRoutes = require('./routes/upload');
@@ -132,4 +152,3 @@ app.listen(PORT, () => {
   console.log(`✅ Server is running on http://localhost:${PORT}`);
   console.log('🧹 Auto cleanup scheduled to run every hour');
 });
-
