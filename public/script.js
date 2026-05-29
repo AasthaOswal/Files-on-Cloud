@@ -87,6 +87,83 @@
     pickedFile = file;
     dzTitle.textContent = file.name;
     dzSub.textContent = formatSize(file.size);
+
+    const filePreview = $("filePreview");
+    const previewContent = $("previewContent");
+
+    if (!filePreview || !previewContent) return;
+
+    if (file.type.startsWith("image/")) {
+      //image preview
+      const reader = new FileReader();
+
+      reader.onload = (e) => {
+        previewContent.innerHTML = `
+          <img src="${e.target.result}" alt="Preview">
+          <div class="file-info">
+            <div class="file-name">${file.name}</div>
+            <div class="file-size">${formatSize(file.size)}</div>
+          </div>
+        `;
+      };
+
+      reader.readAsDataURL(file);
+    }else if(file.type === "application/pdf"){
+      //pdf preview
+      const url = URL.createObjectURL(file);
+
+      previewContent.innerHTML = `
+        <iframe
+          src="${url}"
+          width="100%"
+          height="400"
+          style="border:none;border-radius:8px;">
+        </iframe>
+      `;
+    } else if (
+      file.type.startsWith("text/") ||
+      file.name.endsWith(".json") ||
+      file.name.endsWith(".md") ||
+      file.name.endsWith(".js") ||
+      file.name.endsWith(".css") ||
+      file.name.endsWith(".html")
+    ) {
+      // text preview
+      const reader = new FileReader();
+
+      reader.onload = (e) => {
+        const lines = e.target.result
+          .split('\n')
+          .slice(0, 10)
+          .join('\n');
+
+        previewContent.innerHTML = `
+          <div class="file-info">
+            <div class="file-name">📄 ${file.name}</div>
+            <div class="file-size">${formatSize(file.size)}</div>
+            <pre class="text-preview" style="
+              white-space: pre-wrap;
+              word-break: break-word;
+              overflow-wrap: break-word;
+            ">
+              ${lines}
+            </pre>
+            <p class="muted">Showing first 10 lines...</p>
+          </div>
+        `;
+      };
+
+      reader.readAsText(file);
+    }else {
+      previewContent.innerHTML = `
+        <div class="file-info">
+          <div class="file-name">📄 ${file.name}</div>
+          <div class="file-size">${formatSize(file.size)}</div>
+        </div>
+      `;
+    }
+
+    filePreview.hidden = false;
   }
 
   fileInput.addEventListener("change", (e) => setFile(e.target.files[0]));
