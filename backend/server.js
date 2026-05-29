@@ -34,11 +34,6 @@ const allowedOrigins = [
   "https://files-on-cloud.onrender.com"
 ].filter(Boolean);
 
-// --- SECURE CORS SETUP ---
-// const allowedOrigins = [
-//   "http://localhost:5173",
-//   "https://files-on-cloud.onrender.com"
-// ];
 
 app.use(cors({
   origin: function (origin, callback) {
