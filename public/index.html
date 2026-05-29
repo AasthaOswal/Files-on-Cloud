@@ -41,7 +41,7 @@
 </style>
 <body>
   <!-- The Top Navigation Bar -->
-  <header class="nav">
+  <header class="nav home-nav">
     <a href="#" class="brand">
       <img src="backup-file.png" height="32" width="32" alt="backup" class="brand-img" style="border-radius: 6px;">
       <span>Files on Cloud</span>
@@ -57,7 +57,31 @@
       <button class="btn btn-primary" id="signupBtn">Sign Up</button>
       <button class="btn btn-outline" id="dashboardBtn" style="display: none;">Dashboard</button>
     </div>
+
+    <!-- Mobile Hamburger -->
+    <button class="hamburger" id="hamburgerBtn">
+      ☰
+    </button>
   </header>
+
+  <!-- Mobile Sidebar -->
+  <div class="mobile-overlay" id="mobileOverlay"></div>
+
+  <aside class="mobile-menu" id="mobileMenu">
+    <a href="#workspace">Upload</a>
+    <a href="#workspace" data-tab="download">Download</a>
+    <a href="#instructions">Instructions</a>
+
+
+    <button class="btn btn-ghost theme-toggle" aria-label="Toggle Theme" style="padding: 6px;"></button>
+    <button class="btn btn-ghost" id="mobileLoginBtn">Login</button>
+    <button class="btn btn-primary" id="mobileSignupBtn">Sign Up</button>
+    <button class="btn btn-outline" id="mobileDashboardBtn" style="display:none;">
+      Dashboard
+    </button>
+
+    
+  </aside>
 
   <!-- Welcome Header (Hero Section) -->
   <section class="hero">

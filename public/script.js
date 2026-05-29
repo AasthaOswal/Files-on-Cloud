@@ -307,7 +307,15 @@
       const loginBtn = $("loginBtn");
       const signupBtn = $("signupBtn");
       const dashboardBtn = $("dashboardBtn");
+
+        
+      const mobileLoginBtn = $("mobileLoginBtn");
+      const mobileSignupBtn = $("mobileSignupBtn");
+      const mobileDashboardBtn = $("mobileDashboardBtn");
+
       if (!loginBtn) return;
+      if(!mobileLoginBtn) return;
+
       if (currentUser) {
           loginBtn.textContent = `Hi, ${currentUser.username} (Logout)`;
           loginBtn.onclick = () => {
@@ -322,6 +330,30 @@
               dashboardBtn.style.display = 'inline-block';
               dashboardBtn.onclick = () => window.location.href = 'dashboard.html';
           }
+
+        // Mobile
+        if (mobileLoginBtn) {
+            mobileLoginBtn.textContent = "Logout";
+
+            mobileLoginBtn.onclick = () => {
+                localStorage.removeItem("authToken");
+                authToken = null;
+                currentUser = null;
+                updateAuthUI();
+                toast("Logged out successfully");
+            };
+        }
+
+        if (mobileSignupBtn) {
+            mobileSignupBtn.style.display = "none";
+        }
+
+        if (mobileDashboardBtn) {
+            mobileDashboardBtn.style.display = "inline-block";
+            mobileDashboardBtn.onclick = () => {
+                window.location.href = "dashboard.html";
+            };
+        }
       } else {
           loginBtn.textContent = 'Login';
           loginBtn.onclick = () => goToAuthPage('login');
@@ -330,6 +362,21 @@
               signupBtn.onclick = () => goToAuthPage('signup');
           }
           if (dashboardBtn) dashboardBtn.style.display = 'none';
+
+          // Mobile
+          if (mobileLoginBtn) {
+              mobileLoginBtn.textContent = "Login";
+              mobileLoginBtn.onclick = () => goToAuthPage("login");
+          }
+
+          if (mobileSignupBtn) {
+              mobileSignupBtn.style.display = "inline-block";
+              mobileSignupBtn.onclick = () => goToAuthPage("signup");
+          }
+
+          if (mobileDashboardBtn) {
+              mobileDashboardBtn.style.display = "none";
+          }
       }
   }
 
@@ -412,4 +459,28 @@
       }
     });
   }
+
+  const hamburgerBtn = document.getElementById("hamburgerBtn");
+  const mobileMenu = document.getElementById("mobileMenu");
+  const mobileOverlay = document.getElementById("mobileOverlay");
+  const mobileLoginBtn = $("mobileLoginBtn");
+const mobileSignupBtn = $("mobileSignupBtn");
+const mobileDashboardBtn = $("mobileDashboardBtn");
+
+  hamburgerBtn.addEventListener("click", () => {
+    mobileMenu.classList.toggle("open");
+    mobileOverlay.classList.toggle("show");
+  });
+
+  mobileOverlay.addEventListener("click", () => {
+    mobileMenu.classList.remove("open");
+    mobileOverlay.classList.remove("show");
+  });
+
+  document.querySelectorAll(".mobile-menu a").forEach(link => {
+    link.addEventListener("click", () => {
+      mobileMenu.classList.remove("open");
+      mobileOverlay.classList.remove("show");
+    });
+  });
 })();
