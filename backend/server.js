@@ -29,15 +29,20 @@ const localOrigin = `http://localhost:${PORT}`;
 
 
 // --- SECURE CORS SETUP ---
+// --- SECURE CORS SETUP ---
 const allowedOrigins = [
-  localOrigin,
+  localOrigin, // dynamic localhost based on PORT
+  "http://127.0.0.1:5000",
   "https://files-on-cloud.onrender.com"
 ].filter(Boolean);
 
 
-app.use(cors({
-  origin(origin, callback) {
 
+
+
+app.use(cors({
+  origin: function (origin, callback) {
+    // Allow requests with no origin (Postman, mobile apps)
     if (!origin || origin === "null") {
       return callback(null, true);
     }
