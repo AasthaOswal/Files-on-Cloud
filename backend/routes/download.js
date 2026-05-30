@@ -214,4 +214,22 @@ router.post('/download/:code/verify', async (req, res) => {
   }
 });
 
+// Short URL proxy — calls TinyURL server-side so the browser avoids CORS issues
+router.get('/api/shorten', async (req, res) => {
+  const { url } = req.query;
+  if (!url) return res.status(400).json({ error: 'url query param required' });
+
+  try {
+    const response = await fetch(
+      `https://tinyurl.com/api-create.php?url=${encodeURIComponent(url)}`
+    );
+    if (!response.ok) throw new Error(`TinyURL returned ${response.status}`);
+    const shortUrl = await response.text();
+    res.json({ shortUrl: shortUrl.trim() });
+  } catch (err) {
+    console.error('URL shortener error:', err.message);
+    res.status(502).json({ error: 'URL shortener unavailable' });
+  }
+});
+
 module.exports = router;
