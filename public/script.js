@@ -334,8 +334,33 @@
   const dlExpires = $("dlExpires");
   const dlLocked = $("dlLocked");
 
-  dlCodeInput.addEventListener("input", () => {
+  let lastCheckedCode = "";
+
+  dlCodeInput.addEventListener("input", async () => {
     dlCodeInput.value = dlCodeInput.value.replace(/\D/g, "").slice(0, 5);
+
+    const code = dlCodeInput.value;
+
+    if (code.length !== 5) {
+      dlPwdField.hidden = true;
+      dlPwdInput.value = "";
+      return;
+    }
+
+    if (code === lastCheckedCode) return;
+    lastCheckedCode = code;
+
+    try {
+      const response = await fetch(`${API_BASE}/api/info/${code}`);
+
+      if (!response.ok) return;
+
+      const result = await response.json();
+
+      dlPwdField.hidden = !result.hasPassword;
+    } catch (error) {
+      console.error("Failed to check file protection:", error);
+    }
   });
 
   $("dlInfoBtn").addEventListener("click", async () => {
