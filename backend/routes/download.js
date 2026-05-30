@@ -132,6 +132,9 @@ router.get('/download/:code', async (req, res) => {
           <div class="container">
             <h2>🔒 Password Protected File</h2>
             <p>This file requires a password to download.</p>
+            <p style="color: #666; font-size: 14px;">
+              Even iff you already entered the password on the previous page, please enter it again to continue the download.
+            </p>
             <form method="POST" action="/download/${escapeHtml(code)}/verify">
               <input type="password" name="password" placeholder="Enter password" required>
               <br>
