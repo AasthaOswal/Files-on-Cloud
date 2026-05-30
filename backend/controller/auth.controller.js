@@ -1,12 +1,8 @@
-const express = require('express');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
-const auth = require('../middleware/auth');
-
-const router = express.Router();
 
 // Signup route
-router.post('/signup', async (req, res) => {
+const signup = async (req, res) => {
   try {
     const { username, email, password } = req.body;
     console.log("Signup request body:", req.body);
@@ -53,10 +49,10 @@ router.post('/signup', async (req, res) => {
     console.error('Signup error:', error);
     res.status(500).json({ error: 'Server error during signup.' });
   }
-});
+};
 
 // Login route
-router.post('/login', async (req, res) => {
+const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -97,11 +93,11 @@ router.post('/login', async (req, res) => {
     console.error('Login error:', error);
     res.status(500).json({ error: 'Server error during login.' });
   }
-});
+};
 
 
 // Get current user info
-router.get('/me', auth, async (req, res) => {
+const getMyInfo = async (req, res) => {
   try {
     res.json({
       user: {
@@ -115,7 +111,7 @@ router.get('/me', auth, async (req, res) => {
     console.error('Get user error:', error);
     res.status(500).json({ error: 'Server error getting user info.' });
   }
-});
+};
 
 
-module.exports = router;
+module.exports = {signup, login, getMyInfo};

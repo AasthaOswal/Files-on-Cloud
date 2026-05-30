@@ -1,68 +1,17 @@
-const express = require('express');
-const multer = require('multer');
+
 const jwt = require('jsonwebtoken');
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
 const QRCode = require('qrcode');
 const FileRecord = require('../models/File');
-const auth = require('../middleware/auth');
 
-const router = express.Router();
-
-// File storage configuration
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const uploadDir = path.join(__dirname, '..', '..', 'uploads');
-    fs.promises.access(uploadDir)
-      .then(() => cb(null, uploadDir))
-      .catch(async () => {
-        try {
-          await fs.promises.mkdir(uploadDir, { recursive: true });
-          cb(null, uploadDir);
-        } catch (error) {
-          cb(error);
-        }
-      });
-  },
-  filename: (req, file, cb) => {
-    const uniqueName = crypto.randomBytes(16).toString('hex') + path.extname(file.originalname);
-    cb(null, uniqueName);
-  }
-});
-
-// Allowlist of file extensions that may be uploaded.
-// Client-supplied MIME types are not trusted for security decisions because
-// the Content-Type header is fully attacker-controlled. Extension-based
-// allowlisting is the primary gate; a magic-byte check can be layered on
-// top as defence-in-depth if needed in the future.
-const ALLOWED_EXTENSIONS = new Set([
-  // Documents
-  '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx',
-  '.txt', '.csv', '.md', '.rtf', '.odt', '.ods', '.odp',
-  // Images
-  '.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.bmp', '.ico', '.tiff',
-  // Audio / Video
-  '.mp4', '.mp3', '.wav', '.avi', '.mov', '.mkv', '.flac', '.ogg', '.webm',
-  // Archives
-  '.zip', '.tar', '.gz', '.7z', '.rar',
-  // Data / Config (non-executable)
-  '.json', '.xml', '.yaml', '.yml', '.toml', '.ini',
-]);
-
-const fileFilter = (req, file, cb) => {
-  const ext = path.extname(file.originalname).toLowerCase();
-  if (!ALLOWED_EXTENSIONS.has(ext)) {
-    return cb(new Error(`File type "${ext || '(none)'}" is not permitted.`), false);
-  }
-  cb(null, true);
-};
-
-const upload = multer({
-  storage: storage,
-  limits: { fileSize: 20 * 1024 * 1024 }, // 20MB limit
-  fileFilter: fileFilter
-});
+// Maximum number of files that may be deleted in a single bulk request.
+// Without a cap an authenticated user could send a very large fileCodes
+// array and force the server to issue a correspondingly large $in query
+// and file-system loop, enabling a denial-of-service via resource
+// exhaustion. 100 files per request is a generous practical limit.
+const MAX_BULK_DELETE = 100;
 
 // Generate a random 5-digit code without a prior uniqueness check.
 // Callers are responsible for handling a duplicate-key error from MongoDB
@@ -83,7 +32,7 @@ const parseExpiration = (expiration) => {
 };
 
 // Upload file route
-router.post('/upload', upload.single('file'), async (req, res) => {
+const uploadFile = async (req, res) => {
   try {
     const authHeader = req.header('Authorization');
     if (authHeader) {
@@ -215,10 +164,10 @@ router.post('/upload', upload.single('file'), async (req, res) => {
     }
     res.status(500).json({ error: 'Server error during file upload.' });
   }
-});
+};
 
 // Get file info route
-router.get('/info/:code', async (req, res) => {
+const getFileInfo = async (req, res) => {
   try {
     const { code } = req.params;
     const fileDoc = await FileRecord.findOne({ code }).select('-filename -__v -downloads');
@@ -241,10 +190,10 @@ router.get('/info/:code', async (req, res) => {
     console.error('Info Error:', error);
     res.status(500).json({ error: 'Failed to retrieve file info.' });
   }
-});
+};
 
 // Get analytics route
-router.get('/analytics/:code', auth, async (req, res) => {
+const getAnalytics = async (req, res) => {
   try {
     const { code } = req.params;
     const fileDoc = await FileRecord.findOne({ code });
@@ -279,9 +228,10 @@ router.get('/analytics/:code', auth, async (req, res) => {
     console.error('Analytics Error:', error);
     res.status(500).json({ error: 'Failed to retrieve analytics.' });
   }
-});
+};
+
 // Get all files uploaded by current user
-router.get('/files/me', auth, async (req, res) => {
+const getMyFiles =  async (req, res) => {
   try {
     const files = await FileRecord.find({ uploadedBy: req.user._id || req.user.userId })
       .select('-__v -password') // exclude password hash and version
@@ -291,17 +241,11 @@ router.get('/files/me', auth, async (req, res) => {
     console.error('Get user files error:', error);
     res.status(500).json({ error: 'Failed to retrieve files.' });
   }
-});
+};
 
-// Maximum number of files that may be deleted in a single bulk request.
-// Without a cap an authenticated user could send a very large fileCodes
-// array and force the server to issue a correspondingly large $in query
-// and file-system loop, enabling a denial-of-service via resource
-// exhaustion. 100 files per request is a generous practical limit.
-const MAX_BULK_DELETE = 100;
 
 // Bulk Delete API Endpoint
-router.delete('/files/bulk', auth, async (req, res) => {
+const bulkDeleteFiles = async (req, res) => {
   try {
     const { fileCodes } = req.body;
 
@@ -350,10 +294,10 @@ router.delete('/files/bulk', auth, async (req, res) => {
     console.error('Bulk delete error:', error);
     res.status(500).json({ error: 'Internal server error during bulk deletion.' });
   }
-});
+};
 
 // Delete user file manually
-router.delete('/files/:code', auth, async (req, res) => {
+const deleteFile =  async (req, res) => {
   try {
     const { code } = req.params;
     const fileDoc = await FileRecord.findOne({ code });
@@ -383,10 +327,10 @@ router.delete('/files/:code', auth, async (req, res) => {
     console.error('Delete file error:', error);
     res.status(500).json({ error: 'Failed to delete file.' });
   }
-});
+};
 
 // Rename user file manually
-router.put('/files/:code/rename', auth, async (req, res) => {
+const renameFile = async (req, res) => {
   try {
     const { code } = req.params;
     const { customName } = req.body;
@@ -425,6 +369,6 @@ router.put('/files/:code/rename', auth, async (req, res) => {
     console.error('Rename file error:', error);
     res.status(500).json({ error: 'Failed to rename file.' });
   }
-});
+};
 
-module.exports = router;
+module.exports = {uploadFile, getFileInfo, getMyFiles, getAnalytics, bulkDeleteFiles, deleteFile ,renameFile};
