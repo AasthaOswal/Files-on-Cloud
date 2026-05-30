@@ -1,24 +1,9 @@
-const express = require('express');
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
-const rateLimit = require('express-rate-limit');
 const FileRecord = require('../models/File');
 
-const router = express.Router();
 
-// Dedicated rate limiter for password-verify attempts.
-// Only failed attempts count against the limit (skipSuccessfulRequests: true)
-// so legitimate users who know the password are not penalised.
-// 5 attempts per 15 minutes per IP matches the authLimiter semantics in server.js.
-const verifyLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 5,
-  message: { error: 'Too many password attempts, please try again later.' },
-  skipSuccessfulRequests: true,
-  standardHeaders: true,
-  legacyHeaders: false,
-});
 
 // Escapes characters that have special meaning in HTML to prevent XSS when
 // user-controlled values are interpolated into server-rendered HTML responses.
@@ -97,7 +82,7 @@ const serveFile = async (req, res, fileDoc) => {
 
 // Download file route (GET) -- shows password form for protected files,
 // streams file directly for unprotected ones.
-router.get('/download/:code', async (req, res) => {
+const downloadFile =  async (req, res) => {
   try {
     const { code } = req.params;
 
@@ -165,13 +150,13 @@ router.get('/download/:code', async (req, res) => {
     console.error('Download Error:', error);
     res.status(500).send('<h1>Server Error</h1>');
   }
-});
+};
 
 // Password verification route (POST) -- receives the password in the request
 // body (never in the URL) and streams the file if the password is correct.
 // verifyLimiter restricts each IP to 5 failed attempts per 15-minute window,
 // preventing brute-force attacks against protected-file passwords.
-router.post('/download/:code/verify', verifyLimiter, async (req, res) => {
+const verifyPassword = async (req, res) => {
   try {
     const { code } = req.params;
     const { password } = req.body;
@@ -231,10 +216,10 @@ router.post('/download/:code/verify', verifyLimiter, async (req, res) => {
     console.error('Verify Download Error:', error);
     res.status(500).send('<h1>Server Error</h1>');
   }
-});
+};
 
 // Short URL proxy — calls TinyURL server-side so the browser avoids CORS issues
-router.get('/api/shorten', async (req, res) => {
+const shortenURL =  async (req, res) => {
   const { url } = req.query;
   if (!url) return res.status(400).json({ error: 'url query param required' });
 
@@ -249,6 +234,6 @@ router.get('/api/shorten', async (req, res) => {
     console.error('URL shortener error:', err.message);
     res.status(502).json({ error: 'URL shortener unavailable' });
   }
-});
+};
 
-module.exports = router;
+module.exports = {downloadFile, verifyPassword, shortenURL};

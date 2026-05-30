@@ -58,9 +58,9 @@ app.use(cors({
 }));
 
 // Import routes
-const authRoutes = require('./routes/auth');
-const uploadRoutes = require('./routes/upload');
-const downloadRoutes = require('./routes/download');
+const authRoutes = require('./routes/auth.route.js');
+const uploadRoutes = require('./routes/upload.route.js');
+const downloadRoutes = require('./routes/download.route.js');
 
 // Import models
 const FileRecord = require('./models/File');

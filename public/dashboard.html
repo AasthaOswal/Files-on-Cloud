@@ -473,7 +473,7 @@
                     if (data.recentDownloads && data.recentDownloads.length > 0) {
                         list.innerHTML = data.recentDownloads.map(d => `
                             <li>
-                                <strong>IP:</strong> ${escapeHtml(d.ip.replace(/::ffff:/, ''))} <br>
+                                <strong>IP Hash:</strong> ${escapeHtml(d.ipHash || 'Not Available')}
                                 <strong>Time:</strong> ${escapeHtml(new Date(d.time).toLocaleString())} <br>
                                 <span style="font-size:0.8rem;color:#aaa;">${escapeHtml(d.userAgent)}</span>
                             </li>
