@@ -1,6 +1,9 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
+const crypto = require("crypto");
+const sendEmail = require("../utils/sendEmail"); 
+
 // Signup route
 const signup = async (req, res) => {
   try {
@@ -127,4 +130,162 @@ const logout = async (req, res) => {
   }
 };
 
-module.exports = {signup, login, getMyInfo, logout};
+
+const forgotPassword = async (req, res) => {
+  try {
+    const brevoConfigured =
+      process.env.BREVO_API_KEY &&
+      process.env.BREVO_SENDER_EMAIL &&
+      process.env.BREVO_SENDER_NAME;
+
+    if (!brevoConfigured) {
+      return res.status(503).json({
+        success: false,
+        message: "Password reset email service is not configured."
+      });
+    }
+
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        success : false,
+        message: "Email is required"
+      });
+    }
+
+    const user = await User.findOne({
+      email: email.toLowerCase()
+    });
+
+    if (user) {
+      const resetToken = crypto
+        .randomBytes(32)
+        .toString("hex");
+
+      const hashedToken = crypto
+        .createHash("sha256")
+        .update(resetToken)
+        .digest("hex");
+
+      user.resetPasswordToken = hashedToken;
+      user.resetPasswordExpire =
+        Date.now() + 15 * 60 * 1000; // 15 minutes
+
+      await user.save();
+
+      const finalClientUrl = process.env.NODE_ENV === "development" ? `http://localhost:${process.env.PORT}` : process.env.PRODUCTION_CLIENT_URL;
+
+      const resetUrl =
+        `${finalClientUrl}/reset-password.html?token=${resetToken}`;
+
+      await sendEmail({
+        toEmail: user.email,
+        subject: "Reset Your Password",
+        htmlContent: `
+          <h2>Password Reset Request</h2>
+          <p>Hello ${user.username},</p>
+
+          <p>Click the button below to reset your password:</p>
+
+          <a href="${resetUrl}"
+             style="
+               background:#2563eb;
+               color:white;
+               padding:12px 20px;
+               text-decoration:none;
+               border-radius:6px;
+               display:inline-block;
+             ">
+            Reset Password
+          </a>
+
+          <p>This link will expire in 15 minutes.</p>
+
+          <p>If you did not request this reset, please ignore this email.</p>
+        `
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message:
+        "If an account exists with that email, a reset link has been sent."
+    });
+
+  } catch (error) {
+    console.error("Forgot password error:", error);
+
+    return res.status(500).json({
+      success : false,
+      message: "Server error"
+    });
+  }
+};
+
+
+const resetPassword = async (req, res) => {
+  try {
+    const { token } = req.params;
+    const { password } = req.body;
+
+    if (!password) {
+      return res.status(400).json({
+        success : false,
+        message: "Password is required"
+      });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({
+        success : false,
+        message:
+          "Password must be at least 6 characters long"
+      });
+    }
+
+    const hashedToken = crypto
+      .createHash("sha256")
+      .update(token)
+      .digest("hex");
+
+    const user = await User.findOne({
+      resetPasswordToken: hashedToken,
+      resetPasswordExpire: {
+        $gt: Date.now()
+      }
+    });
+
+    if (!user) {
+      return res.status(400).json({
+        success : false,
+        message: "Invalid or expired reset token"
+      });
+    }
+
+    user.password = password;
+
+    user.resetPasswordToken = null;
+    user.resetPasswordExpire = null;
+
+    // Optional: invalidate all old JWTs
+    user.tokenVersion += 1;
+
+    await user.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Password reset successfully. You will be redirected to login shortly."
+    });
+
+  } catch (error) {
+    console.error("Reset password error:", error);
+
+    return res.status(500).json({
+      success : false,
+      message: "Server error"
+    });
+  }
+};
+
+module.exports = {signup, login, getMyInfo, logout, forgotPassword, resetPassword};
