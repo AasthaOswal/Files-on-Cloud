@@ -1,7 +1,7 @@
 const express = require('express');
 const auth = require('../middleware/auth');
 
-const {signup, login, getMyInfo, logout} = require("../controller/auth.controller.js");
+const {signup, login, getMyInfo, logout, forgotPassword, resetPassword} = require("../controller/auth.controller.js");
 
 const router = express.Router();
 
@@ -19,5 +19,8 @@ router.get('/me', auth, getMyInfo);
 // for this user are immediately rejected by the auth middleware.
 router.post('/logout', auth, logout);
 
+router.post("/forgot-password", forgotPassword);
+
+router.post( "/reset-password/:token", resetPassword);
 
 module.exports = router;
