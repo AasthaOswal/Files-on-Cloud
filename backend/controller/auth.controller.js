@@ -145,6 +145,14 @@ const forgotPassword = async (req, res) => {
       });
     }
 
+    if(!process.env.NODE_ENV){
+      return res.status(500).json({ success: false, message: "NODE_ENV is required in .env."});
+    }
+
+    if ( process.env.NODE_ENV === "production" && !process.env.PRODUCTION_CLIENT_URL) {
+      return res.status(500).json({ success: false, message: "PRODUCTION_CLIENT_URL is required in .env."});
+    }
+
     const { email } = req.body;
 
     if (!email) {
@@ -174,7 +182,7 @@ const forgotPassword = async (req, res) => {
 
       await user.save();
 
-      const finalClientUrl = process.env.NODE_ENV === "development" ? `http://localhost:${process.env.PORT}` : process.env.PRODUCTION_CLIENT_URL;
+      const finalClientUrl = process.env.NODE_ENV === "production" ? process.env.PRODUCTION_CLIENT_URL : `http://localhost:${process.env.PORT}`;
 
       const resetUrl =
         `${finalClientUrl}/reset-password.html?token=${resetToken}`;
