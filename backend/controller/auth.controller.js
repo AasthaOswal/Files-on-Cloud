@@ -275,7 +275,7 @@ const resetPassword = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: "Password reset successfully. You will be redirected to login shortly."
+      message: "Password reset successfully. You will be redirected to login shortly. Please wait....."
     });
 
   } catch (error) {
