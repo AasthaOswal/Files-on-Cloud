@@ -25,8 +25,16 @@ const SIGNATURE_CHECK_EXTENSIONS = new Set([
   ".mkv",
   ".webm",
   ".flac",
-  ".ogg"
+  ".ogg",
+  ".tif",
 ]);
+
+const DETECTED_EXTENSION_ALIASES = {
+  ".jpg": new Set(["jpg", "jpeg"]),
+  ".jpeg": new Set(["jpg", "jpeg"]),
+  ".tif": new Set(["tif", "tiff"]),
+  ".tiff": new Set(["tif", "tiff"]),
+};
 
 async function validateFileSignature(filePath, originalName) {
 
@@ -38,9 +46,16 @@ async function validateFileSignature(filePath, originalName) {
       valid: true
     };
   }
-  const buffer = await fs.promises.readFile(filePath);
 
-  const detectedType = await fileTypeFromBuffer(buffer);
+  const handle = await fs.promises.open(filePath, "r");
+  let detectedType;
+  try {
+    const header = Buffer.alloc(8192);
+    const { bytesRead } = await handle.read(header, 0, header.length, 0);
+    detectedType = await fileTypeFromBuffer(header.subarray(0, bytesRead));
+  } finally {
+    await handle.close();
+  }
 
   if (!detectedType) {
     return {
@@ -49,7 +64,11 @@ async function validateFileSignature(filePath, originalName) {
     };
   }
 
-  if (uploadedExt !== `.${detectedType.ext}`) {
+  const allowedDetectedExts =
+  DETECTED_EXTENSION_ALIASES[uploadedExt] ??
+  new Set([uploadedExt.slice(1)]);
+
+  if (!allowedDetectedExts.has(detectedType.ext)) {
     return {
       valid: false,
       reason: `Extension mismatch. Expected .${detectedType.ext}`

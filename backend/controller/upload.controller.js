@@ -106,8 +106,7 @@ const uploadFile = async (req, res) => {
 
 
         return res.status(400).json({
-          success: false,
-          message: validation.reason
+          error: validation.reason
         });
       }
     }
