@@ -5,6 +5,7 @@ const fs = require('fs');
 const crypto = require('crypto');
 const QRCode = require('qrcode');
 const FileRecord = require('../models/File');
+const validateFileSignature = require("../utils/validateSignature");
 
 // Maximum number of files that may be deleted in a single bulk request.
 // Without a cap an authenticated user could send a very large fileCodes
@@ -97,6 +98,26 @@ const uploadFile = async (req, res) => {
         // from passing through when the original file is a PDF.
         const nameWithoutExt = cleanedCustomName.replace(/\.[^/.]+$/, '');
         displayName = (nameWithoutExt || cleanedCustomName) + (originalExt || '');
+      }
+    }
+
+    if (req.file) {
+      const validation = await validateFileSignature(
+        req.file.path,
+        req.file.originalname
+      );
+
+      if (!validation.valid) {
+        try {
+          await fs.promises.unlink(req.file.path);
+        } catch (err) {
+          console.error("Failed to remove invalid upload:", err);
+        }
+
+
+        return res.status(400).json({
+          error: validation.reason
+        });
       }
     }
 
