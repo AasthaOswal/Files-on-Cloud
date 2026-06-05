@@ -157,17 +157,21 @@ cron.schedule('0 * * * *', async () => {
       expiresAt: { $lt: new Date() }
     });
 
-    if (file.cloudinaryPublicId) {
-      try {
-        await deleteFromCloudinary(file.cloudinaryPublicId);
-        console.log(`Deleted expired file: ${file.filename || file.code}`);
-      } catch (error) {
-        console.error(`Failed to delete expired file: ${file.filename || file.code}`, error);
+    
+    for (const file of expiredFiles) {
+      if (file.cloudinaryPublicId) {
+        try {
+          await deleteFromCloudinary(file.cloudinaryPublicId);
+          console.log(`Deleted expired file: ${file.filename || file.code}`);
+        } catch (error) {
+          console.error(`Failed to delete expired file: ${file.filename || file.code}`, error);
+        }
       }
-    }
 
       // Delete from database
       await FileRecord.deleteOne({ _id: file._id });
+
+    }
 
     if (expiredFiles.length > 0) {
       console.log(`✅ Cleaned up ${expiredFiles.length} expired files`);

@@ -8,6 +8,7 @@ const FileRecord = require('../models/File');
 const validateFileSignature = require("../utils/validateSignature");
 
 const uploadToCloudinary = require("../utils/cloudinaryUpload");
+const deleteFromCloudinary = require("../utils/cloudinaryDelete")
 
 // Maximum number of files that may be deleted in a single bulk request.
 // Without a cap an authenticated user could send a very large fileCodes
@@ -36,6 +37,9 @@ const parseExpiration = (expiration) => {
 
 // Upload file route
 const uploadFile = async (req, res) => {
+  
+  let cloudinaryResult;
+
   try {
     const authHeader = req.header('Authorization');
     if (authHeader) {
@@ -102,8 +106,6 @@ const uploadFile = async (req, res) => {
         displayName = (nameWithoutExt || cleanedCustomName) + (originalExt || '');
       }
     }
-
-    let cloudinaryResult;
 
     if (req.file) {
       const validation = await validateFileSignature(
@@ -190,7 +192,14 @@ const uploadFile = async (req, res) => {
     console.log(`File saved to database with code: ${code}`);
 
     
-    await fs.promises.unlink(req.file.path);
+    try {
+      await fs.promises.unlink(req.file.path);
+    } catch(err) {
+      console.error(
+        "Failed to remove temp file:",
+        err
+      );
+    }
     res.status(201).json({
       success: true,
       code,
@@ -208,6 +217,12 @@ const uploadFile = async (req, res) => {
       } catch (cleanupError) {
         console.error('Failed to remove uploaded file after error:', cleanupError);
       }
+    }
+
+    if(cloudinaryResult?.public_id){
+        await deleteFromCloudinary(
+          cloudinaryResult.public_id
+        );
     }
     res.status(500).json({ error: 'Server error during file upload.' });
   }

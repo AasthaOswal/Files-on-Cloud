@@ -1,4 +1,4 @@
-const cloudinary = require("./cloudinary");
+const cloudinary = require("../config/cloudinary");
 
 const deleteFromCloudinary = async (publicId) => {
   try {
