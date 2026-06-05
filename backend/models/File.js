@@ -19,7 +19,16 @@ const fileSchema = new mongoose.Schema({
   downloads: [downloadSchema],
   password: { type: String }, // Hashed password for protected files
   expiresAt: { type: Date, default: () => new Date(Date.now() + 24 * 60 * 60 * 1000) }, // 24 hours default
-  uploadedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' } // Optional: track who uploaded
+  uploadedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, // Optional: track who uploaded
+
+
+  cloudinaryPublicId: {
+    type: String
+  },
+
+  cloudinaryUrl: {
+    type: String
+  },
 });
 
 // Hash password before saving if provided

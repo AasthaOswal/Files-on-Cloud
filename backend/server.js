@@ -113,7 +113,7 @@ app.use('/api',downloadRoutes);
 
 
 
-// Auto cleanup expired files - runs every hour
+// Auto cleanup LOCAL expired files - runs every hour
 cron.schedule('0 * * * *', async () => {
   try {
     console.log('🧹 Running auto cleanup...');
@@ -136,6 +136,38 @@ cron.schedule('0 * * * *', async () => {
       // Delete from database
       await FileRecord.deleteOne({ _id: file._id });
     }
+
+    if (expiredFiles.length > 0) {
+      console.log(`✅ Cleaned up ${expiredFiles.length} expired files`);
+    } else {
+      console.log('✅ No expired files to clean up');
+    }
+  } catch (error) {
+    console.error('❌ Auto cleanup error:', error);
+  }
+});
+
+
+// Auto cleanup CLOUDINARY expired files - runs every hour
+cron.schedule('0 * * * *', async () => {
+  try {
+    console.log('🧹 Running auto cleanup...');
+
+    const expiredFiles = await FileRecord.find({
+      expiresAt: { $lt: new Date() }
+    });
+
+    if (file.cloudinaryPublicId) {
+      try {
+        await deleteFromCloudinary(file.cloudinaryPublicId);
+        console.log(`Deleted expired file: ${file.filename || file.code}`);
+      } catch (error) {
+        console.error(`Failed to delete expired file: ${file.filename || file.code}`, error);
+      }
+    }
+
+      // Delete from database
+      await FileRecord.deleteOne({ _id: file._id });
 
     if (expiredFiles.length > 0) {
       console.log(`✅ Cleaned up ${expiredFiles.length} expired files`);

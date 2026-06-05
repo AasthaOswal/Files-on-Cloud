@@ -71,13 +71,15 @@ const serveFile = async (req, res, fileDoc) => {
     }
   );
 
-  const nameToDownload = fileDoc.displayName || fileDoc.originalName;
-  const safeDownloadName = path.basename(nameToDownload)
-    .replace(/[\x00-\x1f\x7f]/g, '')
-    .trim() || 'download';
+  // const nameToDownload = fileDoc.displayName || fileDoc.originalName;
+  // const safeDownloadName = path.basename(nameToDownload)
+  //   .replace(/[\x00-\x1f\x7f]/g, '')
+  //   .trim() || 'download';
 
-  const filePath = path.join(__dirname, '..', '..', 'uploads', fileDoc.filename);
-  res.download(filePath, safeDownloadName);
+  // const filePath = path.join(__dirname, '..', '..', 'uploads', fileDoc.filename);
+  // res.download(filePath, safeDownloadName);
+
+  return res.redirect(fileDoc.cloudinaryUrl);
 };
 
 // Download file route (GET) -- shows password form for protected files,
@@ -103,11 +105,8 @@ const downloadFile =  async (req, res) => {
       return res.status(410).send('<h1>File has expired and been deleted</h1>');
     }
 
-    const filePath = path.join(__dirname, '..', '..', 'uploads', fileDoc.filename);
-    try {
-      await fs.promises.access(filePath);
-    } catch (error) {
-      return res.status(404).send('<h1>File missing from server</h1>');
+    if (!fileDoc.cloudinaryUrl) {
+      return res.status(404).send('<h1>File missing from storage</h1>');
     }
 
     // Check password if file is protected
@@ -174,11 +173,8 @@ const verifyPassword = async (req, res) => {
       return res.status(410).send('<h1>File has expired and been deleted</h1>');
     }
 
-    const filePath = path.join(__dirname, '..', '..', 'uploads', fileDoc.filename);
-    try {
-      await fs.promises.access(filePath);
-    } catch {
-      return res.status(404).send('<h1>File missing from server</h1>');
+    if (!fileDoc.cloudinaryUrl) {
+      return res.status(404).send('<h1>File missing from storage</h1>');
     }
 
     if (!fileDoc.password) {
