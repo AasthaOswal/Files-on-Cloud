@@ -10,6 +10,8 @@ const cron = require('node-cron');
 require("dotenv").config({ path: path.join(__dirname, '..', '.env') });
 require("dotenv").config({ path: path.join(__dirname, '.env') });
 
+const deleteFromCloudinary = require("./utils/cloudinaryDelete.js");
+
 // Fail fast if required environment variables are missing
 if (!process.env.JWT_SECRET) {
   console.error('FATAL: JWT_SECRET environment variable is not set. Server will not start.');
@@ -151,7 +153,7 @@ cron.schedule('0 * * * *', async () => {
 // Auto cleanup CLOUDINARY expired files - runs every hour
 cron.schedule('0 * * * *', async () => {
   try {
-    console.log('🧹 Running auto cleanup...');
+    console.log('🧹 Running cloudinary auto cleanup...');
 
     const expiredFiles = await FileRecord.find({
       expiresAt: { $lt: new Date() }
