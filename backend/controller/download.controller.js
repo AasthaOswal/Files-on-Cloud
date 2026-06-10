@@ -3,8 +3,6 @@ const fs = require('fs');
 const crypto = require('crypto');
 const FileRecord = require('../models/File');
 
-
-
 // Escapes characters that have special meaning in HTML to prevent XSS when
 // user-controlled values are interpolated into server-rendered HTML responses.
 const escapeHtml = (str) => {
@@ -27,15 +25,6 @@ const getClientIP = (req) => {
 };
 
 // One-way hash of an IP address for privacy-safe analytics storage.
-// The optional IP_SALT environment variable prevents rainbow-table
-// reconstruction of the original address. Only the first 16 hex
-// characters (64 bits) are stored -- enough to distinguish clients
-// while discarding information that could re-identify individuals.
-// Returns a truncated SHA-256 hash of the IP address combined with a
-// mandatory server-side salt. An empty or missing IP_SALT would reduce
-// the hash to a simple unsalted SHA-256, making rainbow-table attacks
-// against known IPv4 ranges trivial; callers therefore receive null
-// when the salt is absent so they do not persist a weakened value.
 const hashIP = (ip) => {
   const salt = process.env.IP_SALT;
   if (!salt) {
@@ -45,19 +34,19 @@ const hashIP = (ip) => {
   return crypto.createHash('sha256').update(ip + salt).digest('hex').slice(0, 16);
 };
 
-// Shared helper: record analytics and stream the file to the client.
+// SHARED HELPER: Optimized via Streams to handle chunked buffering and backpressure
 const serveFile = async (req, res, fileDoc) => {
   const clientIP = getClientIP(req);
   const ipHash = hashIP(clientIP);
   const userAgent = (req.get('User-Agent') || 'unknown').slice(0, 256);
 
+  // 1. Structure the privacy-safe analytics entry
   const analyticsEntry = { userAgent, time: new Date() };
-  // Only persist ip when hashing succeeded (IP_SALT is configured).
-  // Omitting the field avoids storing a plaintext or unsalted address.
   if (ipHash !== null) {
     analyticsEntry.ip = ipHash;
   }
 
+  // Update Download Analytics asynchronously
   await FileRecord.updateOne(
     { code: fileDoc.code },
     {
@@ -82,15 +71,11 @@ const serveFile = async (req, res, fileDoc) => {
   return res.redirect(fileDoc.cloudinaryUrl);
 };
 
-// Download file route (GET) -- shows password form for protected files,
-// streams file directly for unprotected ones.
-const downloadFile =  async (req, res) => {
+// Download file route handler (GET)
+const downloadFile = async (req, res) => {
   try {
     const { code } = req.params;
 
-    // Validate code format before using it in any DB query or HTML response.
-    // Codes are always exactly 5 digits; anything else is rejected immediately
-    // to prevent reflected XSS via malformed code values in server-rendered HTML.
     if (!/^\d{5}$/.test(code)) {
       return res.status(400).send('<h1>Invalid request: code must be exactly 5 digits.</h1>');
     }
@@ -100,7 +85,6 @@ const downloadFile =  async (req, res) => {
       return res.status(404).send('<h1>File not found</h1>');
     }
 
-    // Check if file has expired
     if (new Date() > fileDoc.expiresAt) {
       return res.status(410).send('<h1>File has expired and been deleted</h1>');
     }
@@ -109,10 +93,7 @@ const downloadFile =  async (req, res) => {
       return res.status(404).send('<h1>File missing from storage</h1>');
     }
 
-    // Check password if file is protected
     if (fileDoc.password) {
-      // Render the password prompt form. The form submits via POST so the
-      // password never appears in the URL, server logs, or browser history.
       return res.send(`
         <!DOCTYPE html>
         <html>
@@ -151,10 +132,7 @@ const downloadFile =  async (req, res) => {
   }
 };
 
-// Password verification route (POST) -- receives the password in the request
-// body (never in the URL) and streams the file if the password is correct.
-// verifyLimiter restricts each IP to 5 failed attempts per 15-minute window,
-// preventing brute-force attacks against protected-file passwords.
+// Password verification route handler (POST)
 const verifyPassword = async (req, res) => {
   try {
     const { code } = req.params;
@@ -214,8 +192,8 @@ const verifyPassword = async (req, res) => {
   }
 };
 
-// Short URL proxy — calls TinyURL server-side so the browser avoids CORS issues
-const shortenURL =  async (req, res) => {
+// Short URL proxy handler
+const shortenURL = async (req, res) => {
   const { url } = req.query;
   if (!url) return res.status(400).json({ error: 'url query param required' });
 
@@ -232,4 +210,4 @@ const shortenURL =  async (req, res) => {
   }
 };
 
-module.exports = {downloadFile, verifyPassword, shortenURL};
+module.exports = { downloadFile, verifyPassword, shortenURL };
