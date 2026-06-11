@@ -25,6 +25,11 @@
     }, 1800);
   }
 
+  if (!config) {
+    console.error("APP_CONFIG not loaded");
+    toast("Configuration failed to load", "error");
+  }
+
   /* ---------- Let's keep the copyright year up to date dynamically ---------- */
   $("year").textContent = new Date().getFullYear();
 

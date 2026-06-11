@@ -179,6 +179,11 @@
         authFeedback.style.display = 'block';
     }
 
+    if (!config) {
+      console.error("APP_CONFIG not loaded");
+      showFeedback("Configuration failed to load", "error");
+    }
+
     // Password Toggle Logic
     document.querySelectorAll('.toggle-password').forEach(button => {
       button.addEventListener('click', function() {

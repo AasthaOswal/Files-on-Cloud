@@ -165,7 +165,9 @@
     <script src="./js/config.js"></script>
     <script>
         const config = window.APP_CONFIG;
-        
+        if(!config){
+            console.error("APP_CONFIG failed to load");
+        }
         const authToken = localStorage.getItem('authToken');
 
         // Make sure the user is actually logged in before showing the dashboard
