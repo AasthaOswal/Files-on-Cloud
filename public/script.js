@@ -10,7 +10,7 @@
 
   const $ = (id) => document.getElementById(id);
   const toastEl = $("toast");
-  const API_BASE = "";
+  const config = window.APP_CONFIG;
   let authToken = localStorage.getItem('authToken');
   let currentUser = null;
   let toastTimer;
@@ -23,6 +23,11 @@
       toastEl.classList.remove("show");
       setTimeout(() => (toastEl.hidden = true), 200);
     }, 1800);
+  }
+
+  if (!config) {
+    console.error("APP_CONFIG not loaded");
+    toast("Configuration failed to load", "error");
   }
 
   /* ---------- Let's keep the copyright year up to date dynamically ---------- */
@@ -217,7 +222,7 @@
         headers['Authorization'] = `Bearer ${authToken}`;
     }
 
-    fetch(`${API_BASE}/api/upload`, {
+    fetch(`${config.API_BASE}/api/upload`, {
         method: "POST",
         headers,
         body: fd
@@ -260,7 +265,7 @@
     // Generate short URL via backend proxy (avoids browser CORS restrictions)
     shortLinkBox.hidden = true;
     shortLinkText.textContent = "";
-    fetch(`${API_BASE}/api/shorten?url=${encodeURIComponent(link)}`)
+    fetch(`${config.API_BASE}/api/shorten?url=${encodeURIComponent(link)}`)
       .then(res => res.json())
       .then(data => {
         if (data.shortUrl) {
@@ -389,7 +394,7 @@
     lastCheckedCode = code;
 
     try {
-      const response = await fetch(`${API_BASE}/api/info/${code}`);
+      const response = await fetch(`${config.API_BASE}/api/info/${code}`);
 
       if (!response.ok) return;
 
@@ -406,7 +411,7 @@
     if (!/^\d{5}$/.test(code)) return toast("Enter a 5-digit code");
     
     try {
-        const response = await fetch(`${API_BASE}/api/info/${code}`);
+        const response = await fetch(`${config.API_BASE}/api/info/${code}`);
         const result = await response.json();
         
         if (response.ok) {
@@ -431,7 +436,7 @@
     if (!dlPwdField.hidden && !dlPwdInput.value) return toast("Password required");
     
     // redirect to the download endpoint, passing along the password if needed
-    let url = `${API_BASE}/api/download/${code}`;
+    let url = `${config.API_BASE}/api/download/${code}`;
     if (!dlPwdField.hidden && dlPwdInput.value) {
         url += `?password=${encodeURIComponent(dlPwdInput.value)}`;
     }
@@ -526,7 +531,7 @@
           return;
       }
       try {
-          const response = await fetch(`${API_BASE}/api/auth/me`, {
+          const response = await fetch(`${config.API_BASE}/api/auth/me`, {
               headers: { 'Authorization': `Bearer ${authToken}` }
           });
           if (response.ok) {

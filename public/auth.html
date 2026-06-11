@@ -131,10 +131,12 @@
     </div>
   </footer>
 
+  <script src="./js/config.js"></script>
+
   <script>
     document.getElementById('year').textContent = new Date().getFullYear();
 
-    const API_BASE = "";
+    const config = window.APP_CONFIG;
 
     const urlParams = new URLSearchParams(window.location.search);
     const startMode = urlParams.get('mode') || 'login';
@@ -177,6 +179,11 @@
         authFeedback.style.display = 'block';
     }
 
+    if (!config) {
+      console.error("APP_CONFIG not loaded");
+      showFeedback("Configuration failed to load", "error");
+    }
+
     // Password Toggle Logic
     document.querySelectorAll('.toggle-password').forEach(button => {
       button.addEventListener('click', function() {
@@ -216,7 +223,7 @@
         authFeedback.style.display = 'none';
 
         try {
-            const res = await fetch(`${API_BASE}/api/auth/login`, {
+            const res = await fetch(`${config.API_BASE}/api/auth/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, password })
@@ -249,7 +256,7 @@
         authFeedback.style.display = 'none';
 
         try {
-            const res = await fetch(`${API_BASE}/api/auth/signup`, {
+            const res = await fetch(`${config.API_BASE}/api/auth/signup`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ username, email, password })
