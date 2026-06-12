@@ -6,6 +6,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const cron = require('node-cron');
+const os = require('os');
 // Load environment variables from root first, then fall back to backend/
 require("dotenv").config({ path: path.join(__dirname, '..', '.env') });
 require("dotenv").config({ path: path.join(__dirname, '.env') });
@@ -153,7 +154,54 @@ cron.schedule('0 * * * *', async () => {
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', timestamp: new Date().toISOString() });
+  const memoryUsage = process.memoryUsage();
+
+  const toMB = (bytes) => Number((bytes / 1024 / 1024).toFixed(2));
+
+  const totalMemory = os.totalmem();
+  const freeMemory = os.freemem();
+  const usedMemory = totalMemory - freeMemory;
+
+  res.status(200).json({
+    status: 'OK',
+    timestamp: new Date().toISOString(),
+
+    // Process information
+    uptime: Math.floor(process.uptime()),
+
+    // Runtime information
+    nodeVersion: process.version,
+
+    // System information
+    platform: os.platform(),
+    cpuCores: os.cpus().length,
+
+    // CPU load averages (Linux/macOS)
+    loadAverage: {
+      oneMinute: os.loadavg()[0],
+      fiveMinutes: os.loadavg()[1],
+      fifteenMinutes: os.loadavg()[2]
+    },
+
+    // System memory
+    systemMemory: {
+      totalMB: toMB(totalMemory),
+      usedMB: toMB(usedMemory),
+      freeMB: toMB(freeMemory),
+      usagePercent: Number(
+        ((usedMemory / totalMemory) * 100).toFixed(2)
+      )
+    },
+
+    // Node process memory
+    processMemory: {
+      rssMB: toMB(memoryUsage.rss),
+      heapTotalMB: toMB(memoryUsage.heapTotal),
+      heapUsedMB: toMB(memoryUsage.heapUsed),
+      externalMB: toMB(memoryUsage.external),
+      arrayBuffersMB: toMB(memoryUsage.arrayBuffers || 0)
+    }
+  });
 });
 
 // Centralized error handling middleware
