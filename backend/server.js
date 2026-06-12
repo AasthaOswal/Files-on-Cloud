@@ -36,7 +36,27 @@ const allowedOrigins = [
   "https://files-on-cloud.onrender.com"
 ].filter(Boolean);
 
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
 
+  const isBlockedOrigin =
+    origin &&
+    origin !== "null" &&
+    !allowedOrigins.includes(origin);
+
+  if (isBlockedOrigin) {
+    console.warn("[CORS_BLOCKED]", {
+      origin,
+      method: req.method,
+      path: req.originalUrl,
+      ip: req.ip || req.socket?.remoteAddress || "Unknown",
+      timestamp: new Date().toISOString(),
+      userAgent: req.get("User-Agent") || "Unknown",
+    });
+  }
+
+  next();
+});
 
 
 
