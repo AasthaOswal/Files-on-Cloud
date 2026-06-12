@@ -6,6 +6,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const cron = require('node-cron');
+const {logError} = require('./utils/logger.js');
 // Load environment variables from root first, then fall back to backend/
 require("dotenv").config({ path: path.join(__dirname, '..', '.env') });
 require("dotenv").config({ path: path.join(__dirname, '.env') });
@@ -158,8 +159,12 @@ app.get('/api/health', (req, res) => {
 
 // Centralized error handling middleware
 app.use((err, req, res, next) => {
-  console.error('❌ Unhandled Exception:', err.stack);
-  res.status(500).json({ error: 'Internal Server Error', message: 'An unexpected error occurred.' });
+  logError(err, req);
+
+  res.status(500).json({
+    error: 'Internal Server Error',
+    message: 'An unexpected error occurred.'
+  });
 });
 
 // Start server
