@@ -1,5 +1,5 @@
 const express = require('express');
-const mongoose = require('mongoose');
+const connectDB = require('./config/db');
 const path = require('path');
 const fs = require('fs');
 const cors = require('cors');
@@ -99,10 +99,8 @@ app.use('/api/auth', authLimiter);
 
 
 // Connect to MongoDB
-const MONGO_URI = process.env.MONGO_URI;
-mongoose.connect(MONGO_URI)
-.then(() => console.log("✅ Connected to MongoDB Atlas"))
-.catch(err => console.error("❌ MongoDB connection error:", err));
+connectDB();
+
 
 // Middleware
 app.use(express.static(path.join(__dirname, '..', 'public')));
