@@ -1,12 +1,18 @@
 const logError = (err, req) => {
-  const sanitizedBody = { ...req.body };
 
-  // Remove sensitive fields
-  delete sanitizedBody.password;
-  delete sanitizedBody.confirmPassword;
-  delete sanitizedBody.token;
+  const redact = (input = {}) => {
+    const clone = { ...input };
+    delete clone.password;
+    delete clone.confirmPassword;
+    delete clone.token;
+    return clone;
+  };
 
-  console.error('❌ Unhandled Exception:', {
+  const sanitizedBody = redact(req.body);
+  const sanitizedParams = redact(req.params);
+  const sanitizedQuery = redact(req.query);
+
+  console.error('Unhandled Exception:', {
     timestamp: new Date().toISOString(),
 
     method: req.method,
@@ -16,8 +22,8 @@ const logError = (err, req) => {
     userAgent: req.get('User-Agent'),
     referrer: req.get('Referer') || 'N/A',
 
-    params: req.params,
-    query: req.query,
+    params: sanitizedParams,
+    query: sanitizedQuery,
     body: sanitizedBody,
 
     errorMessage: err.message,

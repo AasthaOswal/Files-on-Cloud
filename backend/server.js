@@ -161,6 +161,10 @@ app.get('/api/health', (req, res) => {
 app.use((err, req, res, next) => {
   logError(err, req);
 
+  if (res.headersSent) {
+    return next(err);
+  }
+
   res.status(500).json({
     error: 'Internal Server Error',
     message: 'An unexpected error occurred.'
