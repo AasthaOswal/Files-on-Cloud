@@ -1,5 +1,5 @@
 const express = require('express');
-const mongoose = require('mongoose');
+const connectDB = require('./config/db');
 const path = require('path');
 const fs = require('fs');
 const cors = require('cors');
@@ -7,6 +7,7 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const cron = require('node-cron');
 const {logError} = require('./utils/logger.js');
+const os = require('os');
 // Load environment variables from root first, then fall back to backend/
 require("dotenv").config({ path: path.join(__dirname, '..', '.env') });
 require("dotenv").config({ path: path.join(__dirname, '.env') });
@@ -37,7 +38,27 @@ const allowedOrigins = [
   "https://files-on-cloud.onrender.com"
 ].filter(Boolean);
 
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
 
+  const isBlockedOrigin =
+    origin &&
+    origin !== "null" &&
+    !allowedOrigins.includes(origin);
+
+  if (isBlockedOrigin) {
+    console.warn("[CORS_BLOCKED]", {
+      origin,
+      method: req.method,
+      path: req.originalUrl,
+      ip: req.ip || req.socket?.remoteAddress || "Unknown",
+      timestamp: new Date().toISOString(),
+      userAgent: req.get("User-Agent") || "Unknown",
+    });
+  }
+
+  next();
+});
 
 
 
@@ -100,10 +121,8 @@ app.use('/api/auth', authLimiter);
 
 
 // Connect to MongoDB
-const MONGO_URI = process.env.MONGO_URI;
-mongoose.connect(MONGO_URI)
-.then(() => console.log("✅ Connected to MongoDB Atlas"))
-.catch(err => console.error("❌ MongoDB connection error:", err));
+connectDB();
+
 
 // Middleware
 app.use(express.static(path.join(__dirname, '..', 'public')));
@@ -154,7 +173,54 @@ cron.schedule('0 * * * *', async () => {
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', timestamp: new Date().toISOString() });
+  const memoryUsage = process.memoryUsage();
+
+  const toMB = (bytes) => Number((bytes / 1024 / 1024).toFixed(2));
+
+  const totalMemory = os.totalmem();
+  const freeMemory = os.freemem();
+  const usedMemory = totalMemory - freeMemory;
+
+  res.status(200).json({
+    status: 'OK',
+    timestamp: new Date().toISOString(),
+
+    // Process information
+    uptime: Math.floor(process.uptime()),
+
+    // Runtime information
+    nodeVersion: process.version,
+
+    // System information
+    platform: os.platform(),
+    cpuCores: os.cpus().length,
+
+    // CPU load averages (Linux/macOS)
+    loadAverage: {
+      oneMinute: os.loadavg()[0],
+      fiveMinutes: os.loadavg()[1],
+      fifteenMinutes: os.loadavg()[2]
+    },
+
+    // System memory
+    systemMemory: {
+      totalMB: toMB(totalMemory),
+      usedMB: toMB(usedMemory),
+      freeMB: toMB(freeMemory),
+      usagePercent: Number(
+        ((usedMemory / totalMemory) * 100).toFixed(2)
+      )
+    },
+
+    // Node process memory
+    processMemory: {
+      rssMB: toMB(memoryUsage.rss),
+      heapTotalMB: toMB(memoryUsage.heapTotal),
+      heapUsedMB: toMB(memoryUsage.heapUsed),
+      externalMB: toMB(memoryUsage.external),
+      arrayBuffersMB: toMB(memoryUsage.arrayBuffers || 0)
+    }
+  });
 });
 
 // Centralized error handling middleware

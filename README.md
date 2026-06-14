@@ -28,6 +28,81 @@
 
 ---
 
+## ⏳ File Expiration & Automatic Cleanup
+
+Files-on-Cloud supports configurable file expiration periods to help manage storage efficiently and ensure files are not retained longer than necessary.
+
+### Supported Expiration Options
+
+Users can choose one of the following expiration durations when uploading a file:
+
+| Expiration Option | Description                                      |
+| ----------------- | ------------------------------------------------ |
+| `1 Hour`          | File remains available for 1 hour after upload   |
+| `6 Hours`         | File remains available for 6 hours after upload  |
+| `24 Hours`        | File remains available for 24 hours after upload |
+| `7 Days`          | File remains available for 7 days after upload   |
+
+### File Lifecycle
+
+Every uploaded file follows the lifecycle below:
+
+1. User uploads a file through the application.
+2. The selected expiration duration is converted into an expiration timestamp.
+3. The file is stored in the `uploads/` directory.
+4. File metadata, including the expiration timestamp, is stored in the database.
+5. The file remains accessible and downloadable until the expiration time is reached.
+6. Once expired, the file is no longer available for download.
+7. The automated cleanup process permanently removes expired files and their associated records.
+
+### Automatic Cleanup Workflow
+
+The application runs an automated cleanup task every hour using `node-cron`.
+
+The cleanup job performs the following actions:
+
+1. Identifies all files whose `expiresAt` timestamp is earlier than the current time.
+2. Removes the corresponding file from the `uploads/` directory.
+3. Deletes the associated file record from the database.
+4. Logs the cleanup activity for monitoring and debugging purposes.
+
+### Cleanup Process Overview
+
+```text
+File Upload
+     │
+     ▼
+Expiration Timestamp Stored
+     │
+     ▼
+File Available For Download
+     │
+     ▼
+Expiration Time Reached
+     │
+     ▼
+File Becomes Inaccessible
+     │
+     ▼
+Hourly Cleanup Job Runs
+     │
+     ├── Remove File From uploads/
+     └── Delete Database Record
+     │
+     ▼
+Storage Successfully Cleaned
+```
+
+### Benefits
+
+* Prevents unnecessary storage usage.
+* Ensures expired files are automatically removed.
+* Keeps database records synchronized with filesystem storage.
+* Provides predictable file retention behavior for users.
+* Reduces manual maintenance requirements.
+
+---
+
 ## 📂 Project Architecture
 
 The project has been built using a clean, separation-of-concerns architecture dividing static, responsive UI components from robust, secure REST APIs.
