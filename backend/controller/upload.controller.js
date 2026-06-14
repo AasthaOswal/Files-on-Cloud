@@ -8,6 +8,9 @@ const mongoose = require('mongoose');
 const FileRecord = require('../models/File');
 const validateFileSignature = require("../utils/validateSignature");
 
+const uploadToCloudinary = require("../utils/cloudinaryUpload");
+const deleteFromCloudinary = require("../utils/cloudinaryDelete")
+
 // Maximum number of files that may be deleted in a single bulk request.
 // Without a cap an authenticated user could send a very large fileCodes
 // array and force the server to issue a correspondingly large $in query
@@ -35,6 +38,9 @@ const parseExpiration = (expiration) => {
 
 // Upload file route
 const uploadFile = async (req, res) => {
+  
+  let cloudinaryResult;
+
   try {
     const authHeader = req.header('Authorization');
     if (authHeader) {
@@ -120,6 +126,13 @@ const uploadFile = async (req, res) => {
           error: validation.reason
         });
       }
+
+      const fileBuffer = await fs.promises.readFile(req.file.path);
+
+      cloudinaryResult = await uploadToCloudinary(
+        fileBuffer, sanitizedOriginalName
+      );
+
     }
 
     // Save with retry on duplicate-key collision.
@@ -155,7 +168,9 @@ const uploadFile = async (req, res) => {
         size: req.file.size,
         password: password || undefined,
         expiresAt,
-        uploadedBy: uploadedById
+        uploadedBy: req.user ? (req.user._id || req.user.userId) : null,
+        cloudinaryPublicId: cloudinaryResult.public_id,
+        cloudinaryUrl: cloudinaryResult.secure_url,
       });
 
       try {
@@ -189,6 +204,16 @@ const uploadFile = async (req, res) => {
     const qrCodeDataURL = await QRCode.toDataURL(downloadUrl);
 
     console.log(`File saved to database with code: ${code}`);
+
+    
+    try {
+      await fs.promises.unlink(req.file.path);
+    } catch(err) {
+      console.error(
+        "Failed to remove temp file:",
+        err
+      );
+    }
     res.status(201).json({
       success: true,
       code,
@@ -206,6 +231,12 @@ const uploadFile = async (req, res) => {
       } catch (cleanupError) {
         console.error('Failed to remove uploaded file after error:', cleanupError);
       }
+    }
+
+    if(cloudinaryResult?.public_id){
+        await deleteFromCloudinary(
+          cloudinaryResult.public_id
+        );
     }
     res.status(500).json({ error: 'Server error during file upload.' });
   }
@@ -321,13 +352,13 @@ const bulkDeleteFiles = async (req, res) => {
 
     let deletedCount = 0;
     for (const file of filesToDelete) {
-      const filePath = path.join(__dirname, '..', '..', 'uploads', file.filename);
       try {
-        await fs.promises.access(filePath);
-        await fs.promises.unlink(filePath);
-        deletedCount++;
-      } catch (fsError) {
-        console.error(`Failed to delete file ${file.filename} from disk:`, fsError);
+        if (file.cloudinaryPublicId) {
+          await deleteFromCloudinary(file.cloudinaryPublicId);
+          deletedCount++;
+        }
+      } catch (err) {
+        console.error(`Failed to delete file ${file.code} from Cloudinary:`, err);
       }
     }
 
@@ -361,13 +392,8 @@ const deleteFile =  async (req, res) => {
       return res.status(403).json({ error: 'Access denied. You can only delete your own files.' });
     }
 
-    // Delete file from disk
-    const filePath = path.join(__dirname, '..', '..', 'uploads', fileDoc.filename);
-    try {
-      await fs.promises.access(filePath);
-      await fs.promises.unlink(filePath);
-    } catch (error) {
-      console.error('Failed to delete file from disk:', error);
+    if (fileDoc.cloudinaryPublicId) {
+      await deleteFromCloudinary(fileDoc.cloudinaryPublicId);
     }
 
     // Delete from DB
