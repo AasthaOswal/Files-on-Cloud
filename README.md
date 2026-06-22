@@ -227,9 +227,10 @@ Once running, navigate to [http://localhost:10002](http://localhost:10002) to vi
 
 ![alt text](image-3.png)
 
-![alt text](image-4.png)
+<img width="1810" height="1012" alt="image" src="https://github.com/user-attachments/assets/80a573b3-d73b-4e8b-b2e4-6b5fdf953cbd" />
 
-![alt text](image-5.png)
+<img width="1837" height="999" alt="image" src="https://github.com/user-attachments/assets/2fc1f06d-fbdf-47fb-bd28-6a03f3b42c99" />
+
 
 ## 🤝 Contributing
 
